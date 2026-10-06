@@ -91,9 +91,10 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 	// disable RTE_ETH_RX_OFFLOAD_VLAN_EXTEND on ixgbe and i40e devices. 
 	// ixgbe: When this RX offload option is enabled, packet which have TX IP Checksum offloading enabled are not transmitted
 	// i40e: When this offload is enabled unused ports on the same card will stop working (and require a reboot to work again)
+	// no RTE_ETH_RX_OFFLOAD_SCATTER for mlx5 devices: together with a large MTU it slows the receive path down considerably
 	uint64_t rx_offloads = (cfg->disable_offloads ?
-		(is_mlx5_device ? RTE_ETH_RX_OFFLOAD_SCATTER : 0)
-		: (RTE_ETH_RX_OFFLOAD_CHECKSUM | (cfg->strip_vlan ? RTE_ETH_RX_OFFLOAD_VLAN_STRIP : 0) | (!(is_ixgbe_device || is_i40e_device || is_igb_device) ? RTE_ETH_RX_OFFLOAD_VLAN_EXTEND : 0) | RTE_ETH_RX_OFFLOAD_TIMESTAMP | (is_mlx5_device ? RTE_ETH_RX_OFFLOAD_SCATTER: 0)))
+		0
+		: (RTE_ETH_RX_OFFLOAD_CHECKSUM | (cfg->strip_vlan ? RTE_ETH_RX_OFFLOAD_VLAN_STRIP : 0) | (!(is_ixgbe_device || is_i40e_device || is_igb_device) ? RTE_ETH_RX_OFFLOAD_VLAN_EXTEND : 0) | RTE_ETH_RX_OFFLOAD_TIMESTAMP))
 		& dev_info.rx_offload_capa;
 	uint64_t tx_offloads = (cfg->disable_offloads ?
 		RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE
@@ -116,8 +117,9 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 			.rss_conf = rss_conf,
 		} 
 	};
-	// dev_info reports a invalid result for mlx5 devices -> use a fixed MTU of 9000B
-	if(is_mlx5_device) port_conf.rxmode.mtu = 9000;
+	// dev_info reports a invalid result for mlx5 devices -> use a fixed MTU of 1500B
+	// (9000B and scattered RX limited an mlx5 receiver to less than half of its packet rate)
+	if(is_mlx5_device) port_conf.rxmode.mtu = 1500;
 
 	if(!cfg->enable_rss){
 		memset(&port_conf.rx_adv_conf, 0, sizeof(port_conf.rx_adv_conf));
