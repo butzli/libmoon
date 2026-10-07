@@ -65,6 +65,7 @@ struct libmoon_device_config {
 	uint8_t strip_vlan;
 	uint32_t rss_mask;
 	uint8_t enable_rss_symm;
+	uint8_t disable_rx_offloads;
 };
 
 int dpdk_configure_device(struct libmoon_device_config* cfg) {
@@ -92,7 +93,7 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 	// ixgbe: When this RX offload option is enabled, packet which have TX IP Checksum offloading enabled are not transmitted
 	// i40e: When this offload is enabled unused ports on the same card will stop working (and require a reboot to work again)
 	// no RTE_ETH_RX_OFFLOAD_SCATTER for mlx5 devices: together with a large MTU it slows the receive path down considerably
-	uint64_t rx_offloads = (cfg->disable_offloads ?
+	uint64_t rx_offloads = (cfg->disable_offloads || cfg->disable_rx_offloads ?
 		0
 		: (RTE_ETH_RX_OFFLOAD_CHECKSUM | (cfg->strip_vlan ? RTE_ETH_RX_OFFLOAD_VLAN_STRIP : 0) | (!(is_ixgbe_device || is_i40e_device || is_igb_device) ? RTE_ETH_RX_OFFLOAD_VLAN_EXTEND : 0) | RTE_ETH_RX_OFFLOAD_TIMESTAMP))
 		& dev_info.rx_offload_capa;

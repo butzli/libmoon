@@ -406,6 +406,8 @@ ffi.cdef[[
 		uint8_t disable_offloads;
 		uint8_t strip_vlan;
 		uint32_t rss_mask;
+		uint8_t enable_rss_symm;
+		uint8_t disable_rx_offloads;
 	};
 ]]
 

@@ -88,6 +88,8 @@ local devices = namespaces:get()
 ---   rssFunctions optional (default = all supported functions) Table with hash functions specified in dpdk.ETH_RSS_*
 ---	  disableOffloads optional (default = false) Disable all offloading features, this significantly speeds up some drivers (e.g., ixgbe).
 ---                   set by default for drivers that do not support offloading (e.g., virtio)
+---   disableRxOffloads optional (default = false) Disable only the receive offloads (checksum verification, VLAN, timestamps),
+---                   the transmit offloads (e.g., checksum calculation) stay available.
 ---   stripVlan (default = true) Strip the VLAN tag on the NIC.
 ---   rssHashKey (default = nil) (optional) Hash Key to use in the RSS selection process
 ---   rssHashKeyLen (dafault = 0) (optional) Hash Key Length, if a custom one is selected.
@@ -207,6 +209,7 @@ function mod.config(args)
 		enable_rss = args.rssQueues > 1,
 		rss_mask = rssMask,
 		disable_offloads = args.disableOffloads,
+		disable_rx_offloads = args.disableRxOffloads,
 		strip_vlan = args.stripVlan,
 		enable_rss_symm = args.enable_rss_symm
 	}))
