@@ -100,7 +100,10 @@ function dev:setRssQueues(n, baseQueue)
 		end
 	end
 	local ret = ffi.C.rte_eth_dev_rss_reta_update(self.id, entries, retaSize)
-	if ret ~= 0 then
+	-- not supported in isolated mode (rte_flow_isolate), in which flow rules name the queues instead
+	if ret == -95 then
+		log:warn("RETA table not set: " .. strError(ret))
+	elseif ret ~= 0 then
 		log:fatal("Error setting up RETA table: " .. strError(ret))
 	end
 end
