@@ -408,7 +408,10 @@ ffi.cdef[[
 		uint32_t rss_mask;
 		uint8_t enable_rss_symm;
 		uint8_t disable_rx_offloads;
+		uint8_t send_on_timestamp;
 	};
+	int dpdk_tx_timestamp_offset();
+	uint64_t dpdk_tx_timestamp_flag();
 ]]
 
 -- dpdk functions and wrappers

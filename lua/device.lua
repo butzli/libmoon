@@ -90,6 +90,8 @@ local devices = namespaces:get()
 ---                   set by default for drivers that do not support offloading (e.g., virtio)
 ---   disableRxOffloads optional (default = false) Disable only the receive offloads (checksum verification, VLAN, timestamps),
 ---                   the transmit offloads (e.g., checksum calculation) stay available.
+---   sendOnTimestamp optional (default = false) Let the NIC send packets at the time in their mbuf
+---                   (dpdkc.dpdk_tx_timestamp_offset/_flag, RTE_ETH_TX_OFFLOAD_SEND_ON_TIMESTAMP).
 ---   stripVlan (default = true) Strip the VLAN tag on the NIC.
 ---   rssHashKey (default = nil) (optional) Hash Key to use in the RSS selection process
 ---   rssHashKeyLen (dafault = 0) (optional) Hash Key Length, if a custom one is selected.
@@ -210,6 +212,7 @@ function mod.config(args)
 		rss_mask = rssMask,
 		disable_offloads = args.disableOffloads,
 		disable_rx_offloads = args.disableRxOffloads,
+		send_on_timestamp = args.sendOnTimestamp,
 		strip_vlan = args.stripVlan,
 		enable_rss_symm = args.enable_rss_symm
 	}))

@@ -66,7 +66,21 @@ struct libmoon_device_config {
 	uint32_t rss_mask;
 	uint8_t enable_rss_symm;
 	uint8_t disable_rx_offloads;
+	uint8_t send_on_timestamp;
 };
+
+// mbuf field and flag of RTE_ETH_TX_OFFLOAD_SEND_ON_TIMESTAMP: a packet with the flag set is sent by the NIC
+// at the time in the field (clock of the NIC), registered by the first device configured with send_on_timestamp
+static int tx_timestamp_offset = -1;
+static uint64_t tx_timestamp_flag = 0;
+
+int dpdk_tx_timestamp_offset() {
+	return tx_timestamp_offset;
+}
+
+uint64_t dpdk_tx_timestamp_flag() {
+	return tx_timestamp_flag;
+}
 
 int dpdk_configure_device(struct libmoon_device_config* cfg) {
 	const char* driver = dpdk_get_driver_name(cfg->port);
@@ -101,6 +115,17 @@ int dpdk_configure_device(struct libmoon_device_config* cfg) {
 		RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE
 		: (RTE_ETH_TX_OFFLOAD_VLAN_INSERT | RTE_ETH_TX_OFFLOAD_IPV4_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM | RTE_ETH_TX_OFFLOAD_TCP_CKSUM | RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE))
 		& dev_info.tx_offload_capa;
+	if (cfg->send_on_timestamp) {
+		if (!(dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_SEND_ON_TIMESTAMP)) {
+			printf("device %d does not support sending on timestamp\n", cfg->port);
+			return -ENOTSUP;
+		}
+		if (tx_timestamp_offset < 0) {
+			rc = rte_mbuf_dyn_tx_timestamp_register(&tx_timestamp_offset, &tx_timestamp_flag);
+			if (rc) return rc;
+		}
+		tx_offloads |= RTE_ETH_TX_OFFLOAD_SEND_ON_TIMESTAMP;
+	}
 	struct rte_eth_conf port_conf = {
 		.rxmode = {
 			.mq_mode = cfg->enable_rss ? RTE_ETH_MQ_RX_RSS : RTE_ETH_MQ_RX_NONE,
